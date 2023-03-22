@@ -3,6 +3,8 @@ package com.sbz.web3authdemoapp
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -15,6 +17,7 @@ import java8.util.concurrent.CompletableFuture
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.http.HttpService
+import java.net.URL
 
 
 class MainActivity : AppCompatActivity() {
@@ -29,20 +32,31 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // JUST FOR DEBUG
+        val policy = ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+        // This policy shouldn't be used in production
         setContentView(R.layout.activity_main)
 
+        val clientId = getString(R.string.web3auth_project_id)
         web3Auth = Web3Auth(
             Web3AuthOptions(
                 context = this,
-                clientId = getString(R.string.web3auth_project_id),
-                network = Web3Auth.Network.CYAN,
+                clientId = clientId,
+                network = Web3Auth.Network.TESTNET,
                 redirectUrl = Uri.parse("com.sbz.web3authdemoapp://auth"),
-                 whiteLabel = WhiteLabelData(
-                     "Web3Auth Android Example", null, null, "en", true,
+                whiteLabel = WhiteLabelData(
+                     "Nexera Android Example", null, null, "en", true,
                      hashMapOf(
                          "primary" to "#229954"
                      )
-                 ),
+                ),
+                // Optional loginConfig object
+                loginConfig = hashMapOf("jwt" to LoginConfigItem(
+                    verifier = "dua-custom-jwt", // get it from web3auth dashboard
+                    typeOfLogin = TypeOfLogin.JWT,
+                    clientId = clientId,
+                )),
             )
         )
 
@@ -80,10 +94,22 @@ class MainActivity : AppCompatActivity() {
         // Handle user signing in when app is active
         web3Auth.setResultUrl(intent?.data)
     }
+    data class JwtModel(
+        val token: String
+    )
 
     private fun signIn() {
-        val selectedLoginProvider = Provider.GOOGLE   // Can be GOOGLE, FACEBOOK, TWITCH etc.
-        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider))
+        val selectedLoginProvider = Provider.JWT   // Can be GOOGLE, FACEBOOK, TWITCH etc.
+        // tokenId should be retrieved in the background see https://stackoverflow.com/questions/18297485/android-os-networkonmainthreadexception-sending-an-email-from-android/18297516#18297516
+        val jwt =  gson.fromJson(URL("https://compliantapp.nexera.id/auth/tokens?email=desarrollo@wooy.co").readText(), JwtModel::class.java)
+        println(jwt.token)
+        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider,
+                extraLoginOptions = ExtraLoginOptions(
+                    id_token = jwt.token,
+                    domain = "http://localhost:3000", // domain of your  app
+                    verifierIdField = "email", // The field in jwt token which maps to verifier id.
+            )
+        ))
 
         loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
@@ -122,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         val userInfo = web3AuthResponse.userInfo
         println(userInfo)
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(web3AuthResponse)
+            contentTextView.text = web3AuthResponse.toString()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
