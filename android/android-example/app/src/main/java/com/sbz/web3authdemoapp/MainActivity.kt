@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.Gson
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
@@ -25,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var credentials: Credentials
     private val rpcUrl = "https://rpc.ankr.com/eth"
 
-    private val gson = Gson()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +33,7 @@ class MainActivity : AppCompatActivity() {
             Web3AuthOptions(
                 context = this,
                 clientId = getString(R.string.web3auth_project_id),
-                network = Web3Auth.Network.CYAN,
+                network = Web3Auth.Network.TESTNET,
                 redirectUrl = Uri.parse("com.sbz.web3authdemoapp://auth"),
                  whiteLabel = WhiteLabelData(
                      "Web3Auth Android Example", null, null, "en", true,
@@ -43,6 +41,11 @@ class MainActivity : AppCompatActivity() {
                          "primary" to "#229954"
                      )
                  ),
+                // Optional loginConfig object
+                loginConfig = hashMapOf("jwt" to LoginConfigItem(
+                    verifier = "dua-custom-jwt", // get it from web3auth dashboard
+                    typeOfLogin = TypeOfLogin.JWT,
+                )),
             )
         )
 
@@ -82,8 +85,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signIn() {
-        val selectedLoginProvider = Provider.GOOGLE   // Can be GOOGLE, FACEBOOK, TWITCH etc.
-        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider))
+        val selectedLoginProvider = Provider.JWT   // Can be GOOGLE, FACEBOOK, TWITCH etc.
+        // tokenId => https://compliantapp.nexera.id/auth/tokens?email=desarrollo@wooy.co
+        val tokenId = "eyJ0eXAiOiJqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6IkRjMjVwbTFsNnhGY01XcEpjSHNHY1N6WDZFd2JPZk1FdDFUa0tNeEtLQU0ifQ.eyJzdWIiOiJDdXN0b20gSldUIGZvciBXZWIzQXV0aCBDdXN0b20gQXV0aCIsImVtYWlsIjoiZGVzYXJyb2xsb0B3b295LmNvIiwiYXVkIjoidXJuOm15LXJlc291cmNlLXNlcnZlciIsImlzcyI6Imh0dHBzOi8vbXktYXV0aHotc2VydmVyIiwiaWF0IjoxNjc5NDMxNjcyLCJleHAiOjE2Nzk0MzUyNzJ9.bWz5OBFM9OE26_1I2el93-twNDWTlkFv4O7RGfX2KBIUwFarxo9u3OFilAnHwj1s41GVbnnGY8V874Xo35oo-qVoeiGumWlUzBbvkLvaFw3z1lTXyFXq0dBvHtopvfManThmKrfSJ_60-bH16Vp-MLao0YdukjToPU3oZ6jxbHZpnqfQIBHa0nYucTBQnCXIbXUL145Cnui2x5zsTQxmL4t_3n0eO7n9SK6Nxqr-PwzOHIwIkXFQrt2Y685aP4cjr210Oj8vjErH5ItfTXbhEyH-aAB6CUNCtUB5d_m61w3F1rROE8mu0b6YGL_qvaHx7Bs_pRnrJM9wOgEh5hBQ5Q"
+        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider,
+                extraLoginOptions = ExtraLoginOptions(
+                    id_token = tokenId,
+                    domain = "http://localhost:3000", // domain of your  app
+                    verifierIdField = "email", // The field in jwt token which maps to verifier id.
+            )
+        ))
 
         loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
@@ -122,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         val userInfo = web3AuthResponse.userInfo
         println(userInfo)
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(web3AuthResponse)
+            contentTextView.text = web3AuthResponse.toString()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
