@@ -29,22 +29,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val clientId = getString(R.string.web3auth_project_id)
         web3Auth = Web3Auth(
             Web3AuthOptions(
                 context = this,
-                clientId = getString(R.string.web3auth_project_id),
+                clientId = clientId,
                 network = Web3Auth.Network.TESTNET,
                 redirectUrl = Uri.parse("com.sbz.web3authdemoapp://auth"),
-                 whiteLabel = WhiteLabelData(
-                     "Web3Auth Android Example", null, null, "en", true,
+                whiteLabel = WhiteLabelData(
+                     "Nexera Android Example", null, null, "en", true,
                      hashMapOf(
                          "primary" to "#229954"
                      )
-                 ),
+                ),
                 // Optional loginConfig object
                 loginConfig = hashMapOf("jwt" to LoginConfigItem(
                     verifier = "dua-custom-jwt", // get it from web3auth dashboard
                     typeOfLogin = TypeOfLogin.JWT,
+                    clientId = clientId,
                 )),
             )
         )
@@ -86,8 +88,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun signIn() {
         val selectedLoginProvider = Provider.JWT   // Can be GOOGLE, FACEBOOK, TWITCH etc.
-        // tokenId => https://compliantapp.nexera.id/auth/tokens?email=desarrollo@wooy.co
-        val tokenId = "eyJ0eXAiOiJqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6IkRjMjVwbTFsNnhGY01XcEpjSHNHY1N6WDZFd2JPZk1FdDFUa0tNeEtLQU0ifQ.eyJzdWIiOiJDdXN0b20gSldUIGZvciBXZWIzQXV0aCBDdXN0b20gQXV0aCIsImVtYWlsIjoiZGVzYXJyb2xsb0B3b295LmNvIiwiYXVkIjoidXJuOm15LXJlc291cmNlLXNlcnZlciIsImlzcyI6Imh0dHBzOi8vbXktYXV0aHotc2VydmVyIiwiaWF0IjoxNjc5NDMxNjcyLCJleHAiOjE2Nzk0MzUyNzJ9.bWz5OBFM9OE26_1I2el93-twNDWTlkFv4O7RGfX2KBIUwFarxo9u3OFilAnHwj1s41GVbnnGY8V874Xo35oo-qVoeiGumWlUzBbvkLvaFw3z1lTXyFXq0dBvHtopvfManThmKrfSJ_60-bH16Vp-MLao0YdukjToPU3oZ6jxbHZpnqfQIBHa0nYucTBQnCXIbXUL145Cnui2x5zsTQxmL4t_3n0eO7n9SK6Nxqr-PwzOHIwIkXFQrt2Y685aP4cjr210Oj8vjErH5ItfTXbhEyH-aAB6CUNCtUB5d_m61w3F1rROE8mu0b6YGL_qvaHx7Bs_pRnrJM9wOgEh5hBQ5Q"
+        // tokenId should be fetched from => https://compliantapp.nexera.id/auth/tokens?email=desarrollo@wooy.co
+        val tokenId = "eyJ0eXAiOiJqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6IkRjMjVwbTFsNnhGY01XcEpjSHNHY1N6WDZFd2JPZk1FdDFUa0tNeEtLQU0ifQ.eyJzdWIiOiJDdXN0b20gSldUIGZvciBXZWIzQXV0aCBDdXN0b20gQXV0aCIsImVtYWlsIjoiZGVzYXJyb2xsb0B3b295LmNvIiwiYXVkIjoidXJuOm15LXJlc291cmNlLXNlcnZlciIsImlzcyI6Imh0dHBzOi8vbXktYXV0aHotc2VydmVyIiwiaWF0IjoxNjc5NDQ5MDg3LCJleHAiOjE2Nzk0NTI2ODd9.felWbhf7LNpT6gYk9JjDhdcVoohpksBlczQG_jhEOcCj7hzV8o54UmltkCsdKtaUHK45-ZUQx6epxSmcbrcsXNdPE8BWx9RRLBgezWQ9yQqdzqb8wURdYrDx2ns-G2zbRihmNkruQ3x1hxrwgdwLmX5MBMRkmvDz9XR0xeLBPeneN6B1ZXf3zCgQnnlcFp96Qk0ql0TB1nY37JzDqY2rPVAq57tnQ5BfY6Qv9t2sma-MH8O8fsW7Rj5epeYe0paH_lpGqerBE8Suz6rsqdLLk73xvbTh4luF1BiMQzp8NvmgwZwEYYTS-mJZfsG44RszymxSHRzWL_bfqkDWEbeWuQ"
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider,
                 extraLoginOptions = ExtraLoginOptions(
                     id_token = tokenId,
